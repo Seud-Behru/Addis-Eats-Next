@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Colors — LIGHT MODE (unchanged) */
+  --color-cream: #faf7f2;
+  --color-surface: #f5f0ea;
+  --color-surface-container-low: #f0ebe3;
+  --color-card: #ffffff;
+
+  --color-forest: #1b3022;
+  --color-deep-forest: #142419;
+  --color-heading: #1b3022;
+
+  /* Text-safe orange (>= 4.5:1 on cream/surface). The old #d95c32 was only
+     3.5:1 as text and 3.8:1 under white button text, so Lighthouse flagged it. */
+  --color-terracotta: #b0451e;
+  --color-terracotta-dark: #983a17;
+  /* Filled buttons that carry white text: same value in light AND dark mode
+     (dark-mode terracotta is bright, which makes white text only 2.95:1). */
+  --color-cta: #b0451e;
+  --color-cta-dark: #983a17;
+  /* Orange text on the always-dark green sections (>= 4.5:1 there). */
+  --color-terracotta-bright: #f08a63;
+
+  --color-charcoal: #1d1e1c;
+  --color-muted: #5f615c;
+  --color-border: #e8e2d8;
+
+  /* Fonts */
+  --font-display: var(--font-newsreader), Georgia, serif;
+  --font-body: var(--font-plus-jakarta), system-ui, sans-serif;
+}
+
+/* ------------------------------------------------------------------
+   DARK MODE
+
+   Every utility Tailwind generates compiles to `var(--color-…)`, so
+   redefining the tokens here re-themes the whole app without a single
+   className having to change.
+
+   `forest` / `deep-forest` stay dark green: they are used as filled
+   surfaces that carry white text, so flipping them would break that
+   contrast. Heading text uses its own `heading` token, which is the
+   one that flips to near-white.
+------------------------------------------------------------------ */
+:root.dark {
+  --color-cream: #14120f;
+  --color-surface: #1e1b17;
+  --color-surface-container-low: #272119;
+  --color-card: #201d19;
+
+  --color-forest: #22372a;
+  --color-deep-forest: #1a2b20;
+  --color-heading: #eceee6;
+
+  --color-terracotta: #e8764c;
+  --color-terracotta-dark: #d9653b;
+
+  --color-charcoal: #f3efe8;
+  --color-muted: #a9a294;
+  --color-border: #332d25;
+
+  color-scheme: dark;
+}
+
+/* `focus:ring-offset-*` defaults to a white offset, which punches a
+   bright halo through every focused control in dark mode. Tie the
+   offset to the page background instead. */
+@layer base {
+  * {
+    --tw-ring-offset-color: var(--color-cream);
+  }
+}
+
+html {
+  background-color: var(--color-cream);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background-color: var(--color-cream);
+  color: var(--color-charcoal);
+  font-family: var(--font-body);
+
+  /* Never let a horizontal scrollbar appear on small screens. */
+  overflow-x: hidden;
+}
+
+/* Smooth the theme switch instead of snapping between palettes. */
+html,
+body {
+  transition: background-color 250ms ease, color 250ms ease;
+}
+
+/* Respect users who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body,
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

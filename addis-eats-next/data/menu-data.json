@@ -1,0 +1,68 @@
+[
+  {
+    "id": "prime-derek-tibs",
+    "name": "Prime Derek Tibs",
+    "category": "Ethiopian",
+    "description": "Sizzled grass-fed beef cubes, fresh rosemary, sweet red onion, and spiced niter kibbeh butter.",
+    "price": 680,
+    "rating": 4.9,
+    "reviews": 180,
+    "badge": "Chef's Pick",
+    "image": "/images/derk-tibs.jpg"
+  
+  },
+  {
+    "id": "doro-wat",
+    "name": "Authentic Doro Wat",
+    "category": "Ethiopian",
+    "description": "Free-range chicken slow-simmered in aged berbere with a farm egg.",
+    "price": 850,
+    "rating": 5,
+    "reviews": 320,
+    "badge": "Heritage Recipe",
+    "image": "/images/doro-wate.jpg"},
+  {
+    "id": "addis-dialova-pizza",
+    "name": "Addis Diavola Pizza",
+    "category": "Pizza",
+    "description": "48-hour fermented crust, fresh mozzarella, berbere cured salami, and spicy honey.",
+    "price": 520,
+    "rating": 4.8,
+    "reviews": 95,
+    "badge": "Wood-Fired",
+    "image": "/images/Pizza.jpg"
+  },
+  {
+    "id": "braised-lamb-asta",
+    "name": "Braised Lamb Pasta",
+    "category": "Pizza",
+    "description": "Slow-braised lamb, handmade pasta, herbs, and a rich tomato reduction.",
+    "price": 740,
+    "rating": 4.9,
+    "reviews": 120,
+    "badge": "Chef's Table",
+    "image": "/images/braised-lamp.avif"
+  },
+  {
+    "id": "lassic-heeseburger",
+    "name": "Classic Cheeseburger",
+    "category": "Burgers",
+    "description": "Grilled beef patty, mature cheese, caramelized onions, lettuce and house sauce.",
+    "price": 460,
+    "rating": 4.7,
+    "reviews": 88,
+    "badge": "Popular",
+    "image": "/images/burger.avif"
+  },
+  {
+    "id": "cold-brew",
+    "name": "Cold Brew",
+    "category": "Drinks",
+    "description": "Smooth Ethiopian single-origin cold brew served over ice.",
+    "price": 180,
+    "rating": 4.8,
+    "reviews": 72,
+    "badge": "Ethiopian Coffee",
+    "image": "/images/cofee.jpg"
+  }
+]
