@@ -45,3 +45,10 @@ into Google's Rich Results Test and a social-card debugger.
 - Dish photos are now local (`/images/...`). `lib/seo.js` turns them into absolute URLs for the JSON-LD `image`.
 - File names: `derk-tibs.jpg`, `doro-wate.jpg`, `cofee.jpg`, `braised-lamp.avif` look like typos; consider renaming
   (and updating `data/menu-data.json`). `Pizza.jpg` has a capital P, so the data must use that exact case.
+
+## Link previews show no image? (Telegram, WhatsApp, X)
+The `og:image` address is built from the site URL (`lib/site.js`). Order of preference:
+`NEXT_PUBLIC_SITE_URL`, then Vercel's `VERCEL_PROJECT_PRODUCTION_URL`, then `VERCEL_URL`, then localhost.
+On Vercel a localhost or example.com value is ignored. After deploying, run
+`curl -s https://YOUR-SITE/menu/doro-wat | grep og:image`: the address must be your real domain.
+Previews are cached by the chat app: refresh with the @WebpageBot bot in Telegram.

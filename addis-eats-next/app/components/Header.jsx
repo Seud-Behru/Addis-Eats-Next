@@ -14,7 +14,7 @@ import useAuth from "@/lib/useAuth";
 // reads no cookies: session state comes from useAuth() (see lib/useAuth.js),
 // so pages like "/" and "/menu" stay static.
 
-
+// The pill used for Sign in / Sign out (same look on desktop and mobile).
 const pillClass =
   "inline-flex min-w-28 items-center justify-center rounded-full bg-forest px-5 py-2.5 font-body text-sm font-semibold text-white transition hover:bg-deep-forest focus:outline-none focus:ring-2 focus:ring-terracotta focus:ring-offset-2";
 
