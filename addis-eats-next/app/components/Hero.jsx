@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import heroImage from "../assets/hero.jpg";
+import heroImage from "../assets/hero2.jpg";
 function Hero() {
     return (
         <section className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-12 md:pb-24 md:pt-20">
@@ -88,6 +88,7 @@ function Hero() {
                             src={heroImage}
                             alt="Fresh meal being prepared in a restaurant kitchen"
                             priority
+                            fetchPriority="high"
                             placeholder="blur"
                             sizes="(min-width: 1024px) 40vw, 100vw"
                             className="aspect-4/3 w-full object-cover sm:aspect-4/5"
