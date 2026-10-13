@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu as MenuIcon, Moon, ShoppingCart, Sun, X } from "lucide-react";
+import { Menu as MenuIcon, Moon, ShoppingCart, Sun, X, Heart } from "lucide-react";
 
 import useCartStore from "@/lib/cartStore";
 import useHydrated from "@/lib/useHydrated";
 import useTheme from "@/lib/context/useTheme";
 import useAuth from "@/lib/useAuth";
+import useFavorites from "@/lib/context/useFavorites";
 
 // A client component, but still server-rendered for the first paint, and it
 // reads no cookies: session state comes from useAuth() (see lib/useAuth.js),
@@ -21,13 +22,18 @@ const pillClass =
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
+  const { favorites } = useFavorites();
   const pathname = usePathname();
 
   // The cart lives in localStorage, so show 0 until the client has hydrated
   // (otherwise server and browser would disagree about the badge).
+  // Also hide badges entirely when the user is not signed in: guests should
+  // not see counts because the cart/favorites belong to a session.
   const hydrated = useHydrated();
   const items = useCartStore((state) => state.items);
-  const cartCount = hydrated ? items.reduce((total, item) => total + item.quantity, 0) : 0;
+  const loggedIn = hydrated && !!user; // user===undefined (loading) or null (signed out) → false
+  const cartCount = loggedIn ? items.reduce((total, item) => total + item.quantity, 0) : 0;
+  const favCount = loggedIn ? favorites.length : 0;
 
   // Controls the slide-down navigation on small screens.
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,11 +47,12 @@ export default function Header() {
     await signOut();
   }
 
-  // Orders needs an account; Kitchen is staff-only.
+  // Orders needs an account; Admin and Kitchen are role-based.
   const navLinks = [
     { href: "/", label: "Home", exact: true },
     { href: "/menu", label: "Menu" },
-    ...(user ? [{ href: "/orders", label: "Orders" }] : []),
+    ...(user ? [{ href: "/order-history", label: "Orders" }] : []),
+    ...(user?.role === "admin" || user?.role === "staff" ? [{ href: "/admin", label: "Admin" }] : []),
     ...(user?.role === "staff" ? [{ href: "/kitchen", label: "Kitchen" }] : []),
   ];
 
@@ -134,6 +141,24 @@ export default function Header() {
             )}
           </button>
 
+          {/* Favorites */}
+          <Link
+            href="/favorites"
+            className="relative flex items-center gap-1.5 px-1 text-charcoal transition hover:text-terracotta"
+            aria-label={`Favorites with ${favCount} items`}
+          >
+            <Heart size={21} strokeWidth={1.8} aria-hidden="true" />
+            <span className="hidden sm:inline">Favorites</span>
+            {favCount > 0 && (
+              <span
+                className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-forest px-1 text-xs font-bold text-white sm:-right-2.5"
+                aria-hidden="true"
+              >
+                {favCount}
+              </span>
+            )}
+          </Link>
+
           {/* Cart */}
           <Link
             href="/cart"
@@ -200,7 +225,7 @@ export default function Header() {
             })}
           </div>
 
-          <div className="mt-4 flex [&>*]:w-full">{authControl(closeMenu)}</div>
+          <div className="mt-4 flex *:w-full">{authControl(closeMenu)}</div>
         </nav>
       )}
     </header>

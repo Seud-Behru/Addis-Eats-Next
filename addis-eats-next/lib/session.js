@@ -39,6 +39,12 @@ export async function clearSessionCookie() {
 // so that's rejected as well. Anything that fails falls back to "/".
 export function safeNext(value) {
   if (typeof value !== "string" || value.length === 0) return "/";
-  if (!value.startsWith("/") || value.startsWith("//")) return "/";
-  return value;
+  if (!value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\") || value.includes("\\")) return "/";
+  try {
+    const url = new URL(value, "http://localhost");
+    if (url.origin !== "http://localhost") return "/";
+    return url.pathname + url.search;
+  } catch {
+    return "/";
+  }
 }

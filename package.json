@@ -1,0 +1,11 @@
+{
+  "name": "addis-eats-root",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix addis-eats-next",
+    "build": "npm run build --prefix addis-eats-next",
+    "start": "npm run start --prefix addis-eats-next",
+    "lint": "npm run lint --prefix addis-eats-next"
+  }
+}

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import AddToCartButton from "./AddToCartButton";
+import FavoriteToggleButton from "./FavoriteToggleButton";
 
-// Server component: markup only. The one interactive piece is the button leaf.
+// Server component: markup only. The interactive pieces are client leaf buttons.
 export default function DishCard({ dish }) {
   const { id, name, description, price, rating, reviews, badge, image, category } = dish;
   return (
@@ -28,6 +29,9 @@ export default function DishCard({ dish }) {
             {badge}
           </span>
         )}
+        <div className="absolute right-3 top-3 z-10">
+          <FavoriteToggleButton dish={dish} />
+        </div>
       </div>
       <div className="flex grow flex-col gap-5 p-5">
         <div>

@@ -1,14 +1,33 @@
 import dishes from "@/data/menu-data.json";
 
+// In-memory store for live dishes so admin edits work without restarting
+const liveDishes = (globalThis.__addisDishes ??= JSON.parse(JSON.stringify(dishes)));
+
 export const CATEGORIES = ["Ethiopian", "Pizza", "Burgers", "Drinks"];
 
 // Read on the server. Dishes an admin hid never reach a customer page.
 export function getDishes() {
-  return dishes.filter((d) => d.visible !== false);
+  return liveDishes.filter((d) => d.visible !== false);
+}
+
+// Admin view includes hidden dishes
+export function getAllDishesAdmin() {
+  return [...liveDishes];
 }
 
 export function getDish(id) {
-  return getDishes().find((d) => d.id === id) ?? null;
+  return liveDishes.find((d) => d.id === id && d.visible !== false) ?? null;
+}
+
+export function getDishAdmin(id) {
+  return liveDishes.find((d) => d.id === id) ?? null;
+}
+
+export function updateDish(id, updates) {
+  const index = liveDishes.findIndex((d) => d.id === id);
+  if (index === -1) return null;
+  liveDishes[index] = { ...liveDishes[index], ...updates };
+  return liveDishes[index];
 }
 
 // ---------------------------------------------------------------------

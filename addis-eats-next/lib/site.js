@@ -41,4 +41,15 @@ export const CURRENCY = "ETB";
 
 // Routes that belong to one visitor, or that crawlers have no use for.
 // Used by robots.js (Disallow) — and each page also sets robots: noindex.
-export const PRIVATE_PATHS = ["/cart", "/checkout", "/orders", "/kitchen", "/signin", "/api/"];
+export const PRIVATE_PATHS = [
+  "/cart",
+  "/checkout",
+  "/orders",
+  "/order-history",
+  "/order-success",
+  "/favorites",
+  "/kitchen",
+  "/admin",
+  "/signin",
+  "/api/",
+];

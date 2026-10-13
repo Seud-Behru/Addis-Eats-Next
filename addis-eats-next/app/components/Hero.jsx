@@ -87,8 +87,7 @@ function Hero() {
                         <Image
                             src={heroImage}
                             alt="Fresh meal being prepared in a restaurant kitchen"
-                            preload
-                            fetchPriority="high"
+                            priority
                             placeholder="blur"
                             sizes="(min-width: 1024px) 40vw, 100vw"
                             className="aspect-4/3 w-full object-cover sm:aspect-4/5"

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import AddToCartButton from "@/app/components/AddToCartButton";
+import FavoriteToggleButton from "@/app/components/FavoriteToggleButton";
 import { getDish, getDishes } from "@/lib/menu";
 import { dishSummary, dishJsonLd, jsonLdString } from "@/lib/seo";
 
@@ -67,10 +68,13 @@ export default async function DishPage({ params }) {
             ★ {dish.rating} <span className="text-muted">({dish.reviews} reviews)</span>
           </p>
           <p className="mt-6 max-w-xl text-base leading-8 text-muted">{dish.description}</p>
-          <p className="mt-8 font-display text-3xl font-semibold text-heading">{dish.price} ETB</p>
+          <div className="mt-8 flex items-center justify-between gap-4">
+            <p className="font-display text-3xl font-semibold text-heading">{dish.price} ETB</p>
+            <FavoriteToggleButton dish={dish} />
+          </div>
           <AddToCartButton
             dish={dish}
-            className="mt-8 w-full rounded-full bg-cta px-6 py-4 text-sm font-bold text-white transition hover:bg-cta-dark"
+            className="mt-6 w-full rounded-full bg-cta px-6 py-4 text-sm font-bold text-white transition hover:bg-cta-dark"
           >
             Add to cart
           </AddToCartButton>

@@ -106,3 +106,12 @@ body {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* FilterShell client component composition: CSS hides dishes not matching chosen category */
+.menu-grid[data-active="Ethiopian"] article:not([data-category="Ethiopian"]),
+.menu-grid[data-active="Pizza"] article:not([data-category="Pizza"]),
+.menu-grid[data-active="Burgers"] article:not([data-category="Burgers"]),
+.menu-grid[data-active="Drinks"] article:not([data-category="Drinks"]) {
+  display: none !important;
+}
+

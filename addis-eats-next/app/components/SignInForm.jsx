@@ -1,13 +1,15 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { mutate } from "swr";
 import { signIn } from "@/app/actions";
 
-export default function SignInForm({ next }) {
+export default function SignInForm({ next, defaultEmail = "" }) {
   const [state, formAction, pending] = useActionState(signIn, null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTarget = next || searchParams.get("next") || "/";
 
   // The action never redirects itself (see app/actions.js for why) — once
   // it reports success, this effect refreshes the header's session check
@@ -22,7 +24,7 @@ export default function SignInForm({ next }) {
 
   return (
     <form action={formAction} noValidate className="mt-8 rounded-2xl bg-card p-6 shadow-sm sm:p-8">
-      <input type="hidden" name="next" value={next} />
+      <input type="hidden" name="next" value={redirectTarget} />
 
       <div>
         <label htmlFor="email" className="text-sm font-semibold text-charcoal">

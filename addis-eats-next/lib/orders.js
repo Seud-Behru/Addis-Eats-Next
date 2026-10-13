@@ -56,8 +56,10 @@ const STAGES = [
   { status: "Delivered", after: 45_000 },
 ];
 
-function deriveStatus(createdAt) {
-  const elapsed = Date.now() - new Date(createdAt).getTime();
+function deriveStatus(order) {
+  if (order.status === "Cancelled") return "Cancelled";
+  if (order.manualStatus) return order.status;
+  const elapsed = Date.now() - new Date(order.createdAt).getTime();
   let status = STAGES[0].status;
   for (const stage of STAGES) {
     if (elapsed >= stage.after) status = stage.status;
@@ -68,28 +70,84 @@ function deriveStatus(createdAt) {
 export function getOrder(id) {
   const order = store.find((o) => o.id === id);
   if (!order) return null;
-  return { ...order, status: deriveStatus(order.createdAt) };
+  return { ...order, status: deriveStatus(order) };
+}
+
+export function cancelOrderInStore(id, userId, role) {
+  const order = store.find((o) => o.id === id);
+  if (!order) return { ok: false, error: "Order not found" };
+
+  // Ownership check: must be owner or staff/admin
+  if (order.userId !== userId && role !== "staff" && role !== "admin") {
+    return { ok: false, error: "Unauthorized to cancel this order" };
+  }
+
+  const currentStatus = deriveStatus(order);
+  if (currentStatus === "Delivered") {
+    return { ok: false, error: "Cannot cancel an already delivered order" };
+  }
+  if (currentStatus === "Cancelled") {
+    return { ok: false, error: "Order is already cancelled" };
+  }
+
+  order.status = "Cancelled";
+  order.manualStatus = true;
+  return { ok: true, order: { ...order } };
+}
+
+export function updateOrderStatus(id, newStatus) {
+  const order = store.find((o) => o.id === id);
+  if (!order) return null;
+  order.status = newStatus;
+  order.manualStatus = true;
+  return { ...order };
 }
 
 // ---------------------------------------------------------------------
 // Reading orders back, scoped by who's asking.
 // ---------------------------------------------------------------------
 
-// Used by /orders — only ever returns orders whose userId matches the
-// session's own id. There's no parameter here a caller could widen to
-// see someone else's orders; the id comes from getSession(), not from
-// a query string.
+// Used by /orders & /order-history — only ever returns orders whose userId matches
+// the session's own id.
 export function getOrdersForUser(userId) {
   return store
     .filter((o) => o.userId === userId)
-    .map((o) => ({ ...o, status: deriveStatus(o.createdAt) }))
+    .map((o) => ({ ...o, status: deriveStatus(o) }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-// Used by /kitchen only, which checks session.role === "staff" itself
-// before ever calling this — see app/kitchen/page.js.
+// Used by /kitchen & /admin/orders
 export function listAllOrders() {
   return store
-    .map((o) => ({ ...o, status: deriveStatus(o.createdAt) }))
+    .map((o) => ({ ...o, status: deriveStatus(o) }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+// Aggregation for the Admin dashboard: summarized on the server so only
+// aggregated metrics cross the wire to the client.
+export function getOrdersSummary() {
+  const all = listAllOrders();
+  const validOrders = all.filter((o) => o.status !== "Cancelled");
+  const totalRevenue = validOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+
+  const statusCounts = {
+    Preparing: 0,
+    "Out for delivery": 0,
+    Delivered: 0,
+    Cancelled: 0,
+  };
+
+  all.forEach((o) => {
+    if (statusCounts[o.status] !== undefined) {
+      statusCounts[o.status]++;
+    }
+  });
+
+  return {
+    totalRevenue,
+    totalOrders: all.length,
+    activeOrders: statusCounts.Preparing + statusCounts["Out for delivery"],
+    statusCounts,
+    recentOrders: all.slice(0, 5),
+  };
 }

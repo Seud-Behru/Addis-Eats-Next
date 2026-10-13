@@ -52,20 +52,31 @@ export default function CheckoutForm({ defaults }) {
   if (ok) {
     return (
       <section className="mx-auto mt-10 max-w-xl rounded-2xl bg-card p-8 text-center shadow-sm">
-        <h2 className="font-display text-3xl font-semibold text-heading">Order placed</h2>
+        <h2 className="font-display text-3xl font-semibold text-heading">Order placed successfully!</h2>
         <p className="mt-4 leading-7 text-muted">
-          Order {state.order.id} · {state.order.total} ETB. We&apos;re preparing it now.
+          Order {state.order.id} · {state.order.total} ETB. TeleBirr payment received. We&apos;re preparing your Ethiopian feast now.
         </p>
 
-        <Link
-          href={`/orders/${state.order.id}`}
-          className="mt-6 inline-flex rounded-full bg-cta px-6 py-3 text-sm font-semibold text-white transition hover:bg-cta-dark"
-        >
-          Track your order
-        </Link>
-        <Link href="/menu" className="mt-8 inline-flex rounded-full bg-forest px-6 py-3 text-sm font-semibold text-white transition hover:bg-deep-forest">
-          Back to menu
-        </Link>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link
+            href={`/order-success?orderId=${state.order.id}`}
+            className="inline-flex rounded-full bg-cta px-6 py-3 text-sm font-semibold text-white transition hover:bg-cta-dark"
+          >
+            Track on Live Map
+          </Link>
+          <Link
+            href="/order-history"
+            className="inline-flex rounded-full bg-forest px-6 py-3 text-sm font-semibold text-white transition hover:bg-deep-forest"
+          >
+            Order History
+          </Link>
+          <Link
+            href="/menu"
+            className="inline-flex rounded-full bg-surface px-6 py-3 text-sm font-semibold text-heading transition hover:bg-border"
+          >
+            Back to menu
+          </Link>
+        </div>
       </section>
     );
   }

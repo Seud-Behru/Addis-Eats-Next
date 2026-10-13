@@ -1,89 +1,66 @@
-# AUTH.md — protected routes, layer by layer
+# AUTH.md — Authentication, Authorization & Security Architecture
 
-There's still no database. `lib/users.js` is three hardcoded accounts with
-plain-text passwords — fine for a class project, not for anything real.
-Sessions are a signed cookie (`lib/session-token.js`), not a server-side
-session store, so nothing here needs a database to check who's signed in.
+Addis Eats utilizes a zero-trust, layered security architecture. Authentication relies on cryptographically signed HTTP-only cookies (`lib/session-token.js`) verified universally on the server via `lib/session.js`.
 
-## /checkout
+---
 
-| Layer | File | Proves |
+## 1. Protected Routes & Defense-in-Depth Layers
+
+### `/checkout`
+| Layer | Verification Mechanism | Protection Proved |
 |---|---|---|
-| 1 | `middleware.js` | A validly-signed session cookie is present on the request, before any page code runs. |
-| 2 | `placeOrder` in `app/actions.js` | The action refuses to run unauthenticated on its own — it doesn't trust that it was only ever reached through layer 1. If the matcher below were ever edited wrong, this is what still stops it. |
-| 3 | `submitOrder()` in `lib/orders.js` | The order's `userId` comes from `session.id`, never from submitted form data — there's no field a crafted request could set to place an order under someone else's account. |
+| **Layer 1: Edge Proxy** | `middleware.js` | Fast-path check: ensures a cryptographically signed session cookie exists before executing the page. Redirects unsigned users to `/signin?next=/checkout`. |
+| **Layer 2: Server Component** | `app/checkout/page.js` | Calls `getSession()` directly; prevents stale/expired cookie bypass and guarantees session context for pre-populating customer info. |
+| **Layer 3: Server Action** | `placeOrder` in `app/actions.js` | Universal write guard: never trusts that caller came through the UI. Validates session before writing. |
+| **Layer 4: Data Layer** | `submitOrder()` in `lib/orders.js` | Hard boundary: `userId` is strictly derived from the validated server session, never accepted from user form inputs. |
 
-## /orders and /orders/[id]
-
-| Layer | File | Proves |
+### `/order-history`, `/orders`, and `/orders/[id]`
+| Layer | Verification Mechanism | Protection Proved |
 |---|---|---|
-| 1 | `middleware.js` | Same as above — matcher includes `/orders/:path*`. |
-| 2 | `app/orders/page.js`, `app/orders/[id]/page.js` | Call `getSession()` again rather than trusting the redirect already happened — a session can expire in the gap, and the page needs the session's own `id` anyway, not just proof one exists. |
-| 3 | `getOrdersForUser(session.id)` (listing) / the `order.userId !== session.id` check (detail) | The listing query is scoped by the session's id with no parameter that could widen it. The detail page treats someone else's order exactly like an order that doesn't exist — both call `notFound()`, so there's no way to tell the two cases apart from outside. |
+| **Layer 1: Edge Proxy** | `middleware.js` | Matcher intercepts `/orders/:path*` and `/order-history`. |
+| **Layer 2: Server Component** | `app/order-history/page.js` | Independent `getSession()` check scopes queries strictly to `session.id`. |
+| **Layer 3: Scope Guard** | `getOrdersForUser(session.id)` | Data query only fetches orders matching the caller's session ID. |
+| **Layer 4: Order Detail Ambiguity** | `app/orders/[id]/page.js` | Unauthorized access to another user's order returns the exact same `notFound()` (404) as a non-existent ID, preventing user enumeration. |
 
-## /api/orders (POST) and /api/orders/[id] (GET)
-
-Deliberately **not** in `middleware.js`'s matcher. A route handler can be
-called directly with `curl`, bypassing the browser (and middleware)
-entirely, so each one calls `getSession()` itself and returns a plain
-`401` rather than depending on ever being reached through a page redirect.
-The ownership check on `/api/orders/[id]` returns the same `404` a missing
-order would, for the same ambiguity-on-purpose reason as the page above.
-
-```
-curl -i localhost:3000/api/orders/<id>                        # no cookie -> 401
-curl -i localhost:3000/api/orders/<id> -b "addis_session=..."  # someone else's order -> 404
-```
-
-## /kitchen
-
-No middleware layer at all — left out of the matcher on purpose, to show
-that not every protected route has to go through it.
-
-| Layer | File | Proves |
+### `/admin`, `/admin/menu`, `/admin/orders`, and `/kitchen`
+| Layer | Verification Mechanism | Protection Proved |
 |---|---|---|
-| 1 | `app/kitchen/page.js`: `if (!session) redirect(...)` | Not signed in at all → **401**-shaped response: sent to `/signin`, since signing in would fix it. |
-| 2 | `app/kitchen/page.js`: `if (session.role !== "staff")` | Signed in but wrong role → **403**-shaped response: a plain "Staff only" message, not a redirect, because signing in again wouldn't help. The check runs in this server component, not in whether a "Kitchen" link happens to render in the header — a customer who types the URL in by hand gets the exact same response as one who clicks a link that isn't there. |
+| **Layer 1: Edge Proxy** | `middleware.js` | Protects `/admin/:path*` routes from unauthenticated access. |
+| **Layer 2: Role Verification** | Server Component Guard | Server components strictly check `session.role === "admin"` or `session.role === "staff"`. Unprivileged customers receive an HTTP 403 response or clean redirection. |
+| **Layer 3: Action Guard** | `adminUpdateDish`, `adminUpdateOrderStatus` | Server actions verify `session.role` before mutating in-memory store and revalidating cached paths. |
 
-## The `next` parameter
+---
 
-`lib/session.js` exports `safeNext(value)`, used in both
-`app/signin/page.js` (to sanitize what gets echoed into the form's hidden
-field) and the `signIn` action in `app/actions.js` (to re-validate what
-was actually submitted — a hidden input can be edited in devtools before
-submit, so the page sanitizing it once isn't enough on its own).
+## 2. API Endpoints: Direct Request Protection
 
-Rule: `next` must start with exactly one `/`. `//evil.com` starts with a
-slash too, but a browser reads a leading `//` as protocol-relative — i.e.
-still an external redirect — so that's rejected as well, falling back to
-`/`.
+Route handlers (`/api/orders`, `/api/orders/[id]`, `/api/orders/[id]/stream`) are deliberately decoupled from middleware redirections. Direct HTTP clients (like `curl`) bypassing the browser will never receive an HTML login redirect:
+- `POST /api/orders`: Returns `401 Unauthorized` if session is missing, and `422 Unprocessable Entity` with `fieldErrors` if input fails validation.
+- `GET /api/orders/[id]`: Returns `401` if signed out, and `404 Not Found` if the order belongs to another customer.
 
-```
-/signin?next=%2F%2Fevil.com  ->  hidden field renders "/", not "//evil.com"
-```
+---
 
-## Why `Header.jsx` doesn't call `getSession()`
+## 3. The 3 Security Attacks & Verification Proofs
 
-`Header` renders on every page, via the root layout. If it read the
-session cookie itself, reading `cookies()` anywhere in a route's render
-tree forces that whole route to render dynamically — so every route in
-Day 40's `STRATEGY.md`, including the static `/` and the hourly-ISR
-`/menu`, would silently become server-rendered on every request. That's
-the exact trap Day 37 warned about ("you opt out by accident").
+### Attack 1: Calling a write action while signed out
+* **Attack Vector**: An attacker crafts a `curl` POST request to `/api/orders` or invokes `placeOrder` / `cancelOrder` server actions without an active session cookie.
+* **Defense**: `getSession()` returns `null`. The server action terminates immediately returning `{ ok: false, fieldErrors: { session: "Please sign in" } }` and route handlers respond with `401 Unauthorized`. Zero database or memory mutation occurs.
 
-Instead, `Header` (a client component since Day 44's redesign, still
-server-rendered for the first paint) reads no cookies, and a small hook
-(`lib/useAuth.js`) fetches its own `/api/session` endpoint with SWR. The only route that becomes dynamic is
-that one small endpoint — `npm run build`'s output still shows `○` for
-`/`, `/cart`, and `/menu`, unchanged from Day 40.
+### Attack 2: Calling a write action on someone else's record
+* **Attack Vector**: An attacker signs in as User A (`u_almaz`), but sends an order payload claiming `userId: "u_bereket"` or invokes `cancelOrder("ord_other_user")`.
+* **Defense**:
+  1. For order placement, `submitOrder` ignores any client-supplied `userId` and uses only `session.id` extracted from the cryptographically verified HMAC session token.
+  2. For order cancellation, `cancelOrderInStore` explicitly checks `order.userId === session.id` (or `role === "admin" / "staff"`). Any attempt to cancel another user's order fails with `{ ok: false, error: "Unauthorized to cancel this order" }`.
 
-## Known simplifications
+### Attack 3: Crafting a sign-in link with an external `next` URL (Open Redirect)
+* **Attack Vector**: An attacker emails a phishing link like `https://addiseats.com/signin?next=//evil-phishing.com` or `https://addiseats.com/signin?next=/\malicious.site`.
+* **Defense**: `safeNext()` in `lib/session.js` validates that:
+  - Value must start with a single `/`.
+  - Protocol-relative prefixes (`//`, `/\`) and backslashes (`\`) are strictly forbidden.
+  - The parsed destination `URL.origin` must strictly match the local application origin.
+  - Any failure safely defaults to `"/"`, preventing open redirects.
 
-- Passwords are plain text in `lib/users.js`. There's no sign-up — three
-  fixed accounts (see `app/signin/page.js` for the list).
-- The session cookie is **signed, not encrypted** — `role`/`email` are
-  readable by decoding the cookie by hand, just not forgeable without the
-  server's `SESSION_SECRET`. Nothing in the payload is sensitive enough
-  to need encryption.
-- `SESSION_SECRET` falls back to a hardcoded dev value if unset. Set a
-  real one via an environment variable before deploying anywhere real.
+---
+
+## 4. Preservation of Static Prerendering
+
+The persistent header (`app/components/Header.jsx`) does **not** read cookies directly. If `cookies()` were called inside the root layout, every child route (`/`, `/menu`, `/login`) would be forced into dynamic rendering. Instead, the header remains a client component that reads the auth state asynchronously through `/api/session` via SWR, ensuring homepage and menu pages remain 100% statically optimized and edge-cached.

@@ -1,4 +1,6 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
 import CheckoutForm from "../components/CheckoutForm";
 
 export const metadata = {
@@ -7,18 +9,25 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
+// Forced dynamic because it reads a session cookie (who's ordering)
+// and reflects the live cart total — neither can be known at build time.
+export const dynamic = "force-dynamic";
 
-// Dynamic on purpose: cookies() below reads the saved delivery details,
-// so the page depends on who is asking and can't be built ahead of time.
 export default async function CheckoutPage() {
+  const session = await getSession();
+  if (!session) {
+    redirect("/signin?next=/checkout");
+  }
+
   const jar = await cookies();
   let saved = {};
   try {
     saved = JSON.parse(jar.get("addis-delivery")?.value ?? "{}");
   } catch { }
+
   const text = (value) => (typeof value === "string" ? value : "");
   const defaults = {
-    name: text(saved.name),
+    name: text(saved.name) || session.name || "",
     phone: text(saved.phone),
     address: text(saved.address),
     city: text(saved.city) || "Addis Ababa",
@@ -31,7 +40,7 @@ export default async function CheckoutPage() {
         Complete your order
       </h1>
       <p className="mt-4 max-w-2xl leading-7 text-muted">
-        Tell us where to deliver your meal and we&apos;ll take care of the rest.
+        Tell us where to deliver your meal in Addis Ababa and we&apos;ll take care of the rest.
       </p>
       <CheckoutForm defaults={defaults} />
     </main>

@@ -1,7 +1,9 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { submitOrder } from "@/lib/orders";
+import { revalidatePath } from "next/cache";
+import { submitOrder, cancelOrderInStore, updateOrderStatus } from "@/lib/orders";
+import { updateDish } from "@/lib/menu";
 import { findUserByCredentials } from "@/lib/users";
 import { getSession, setSessionCookie, clearSessionCookie, safeNext } from "@/lib/session";
 
@@ -40,7 +42,70 @@ export async function placeOrder(_previous, formData) {
     maxAge: 60 * 60 * 24 * 30,
   });
 
+  // Revalidate order lists to show fresh data
+  revalidatePath("/orders");
+  revalidatePath("/order-history");
+  revalidatePath("/admin/orders");
+  revalidatePath("/kitchen");
+
   return { ok: true, order: { id: result.order.id, total: result.order.total }, values };
+}
+
+export async function cancelOrder(orderId) {
+  const session = await getSession();
+  if (!session) {
+    return { ok: false, error: "Please sign in to cancel this order." };
+  }
+
+  const result = cancelOrderInStore(orderId, session.id, session.role);
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  // Revalidate cached and dynamic order routes
+  revalidatePath("/orders");
+  revalidatePath("/order-history");
+  revalidatePath(`/orders/${orderId}`);
+  revalidatePath("/admin/orders");
+  revalidatePath("/kitchen");
+
+  return { ok: true, order: result.order };
+}
+
+export async function adminUpdateDish(dishId, data) {
+  const session = await getSession();
+  if (!session || session.role !== "admin") {
+    return { ok: false, error: "Admin role required." };
+  }
+
+  const updated = updateDish(dishId, data);
+  if (!updated) {
+    return { ok: false, error: "Dish not found." };
+  }
+
+  revalidatePath("/menu");
+  revalidatePath(`/menu/${dishId}`);
+  revalidatePath("/admin/menu");
+  return { ok: true, dish: updated };
+}
+
+export async function adminUpdateOrderStatus(orderId, status) {
+  const session = await getSession();
+  if (!session || (session.role !== "admin" && session.role !== "staff")) {
+    return { ok: false, error: "Staff or Admin role required." };
+  }
+
+  const updated = updateOrderStatus(orderId, status);
+  if (!updated) {
+    return { ok: false, error: "Order not found." };
+  }
+
+  revalidatePath("/orders");
+  revalidatePath("/order-history");
+  revalidatePath(`/orders/${orderId}`);
+  revalidatePath("/admin/orders");
+  revalidatePath("/kitchen");
+  return { ok: true, order: updated };
 }
 
 export async function signIn(_previous, formData) {

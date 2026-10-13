@@ -7,6 +7,7 @@ const USERS = [
   { id: "u_almaz", email: "almaz@addiseats.com", password: "almaz123", role: "customer", name: "Almaz" },
   { id: "u_bereket", email: "bereket@addiseats.com", password: "bereket123", role: "customer", name: "Bereket" },
   { id: "u_staff", email: "staff@addiseats.com", password: "staff123", role: "staff", name: "Kitchen Staff" },
+  { id: "u_admin", email: "admin@addiseats.com", password: "admin123", role: "admin", name: "Admin" },
 ];
 
 export function findUserByCredentials(email, password) {
