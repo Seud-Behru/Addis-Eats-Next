@@ -27,7 +27,7 @@ export default function FavoritesPage() {
 
         <Link
           href="/menu"
-          className="inline-flex min-h-[44px] items-center rounded-full bg-forest px-5 py-2.5 text-xs font-bold text-white transition hover:bg-deep-forest"
+          className="inline-flex min-h-11 items-center rounded-full bg-forest px-5 py-2.5 text-xs font-bold text-white transition hover:bg-deep-forest"
         >
           Browse Full Menu
         </Link>
@@ -53,7 +53,7 @@ export default function FavoritesPage() {
           <div className="mt-8">
             <Link
               href="/menu"
-              className="inline-flex min-h-[44px] items-center rounded-full bg-cta px-6 py-3 text-sm font-semibold text-white shadow transition hover:bg-cta-dark"
+              className="inline-flex min-h-11 items-center rounded-full bg-cta px-6 py-3 text-sm font-semibold text-white shadow transition hover:bg-cta-dark"
             >
               Explore Ethiopian Dishes
             </Link>
@@ -82,7 +82,7 @@ export default function FavoritesPage() {
                   type="button"
                   onClick={() => removeFavorite(dish.id)}
                   aria-label={`Remove ${dish.name} from favorites`}
-                  className="absolute right-3 top-3 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-white/90 p-2 text-red-600 shadow-sm backdrop-blur transition hover:bg-white hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="absolute right-3 top-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-white/90 p-2 text-red-600 shadow-sm backdrop-blur transition hover:bg-white hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>

@@ -1,8 +1,4 @@
-/**
- * Correctly escapes a field for CSV export according to RFC 4180.
- * Any field containing quotes, commas, or newlines is wrapped in double quotes,
- * and internal double quotes are escaped by doubling them ("").
- */
+
 export function escapeCsvField(val) {
   if (val === null || val === undefined) return "";
   const str = String(val);
