@@ -13,7 +13,7 @@ export default function MenuLayout({ children }) {
                 <div className="h-72 w-full animate-pulse rounded-3xl bg-card" />
               }
             >
-              <CategorySidebar />
+
             </Suspense>
           </div>
 
