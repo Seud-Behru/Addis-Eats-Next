@@ -5,6 +5,7 @@ import AddToCartButton from "@/app/components/AddToCartButton";
 import FavoriteToggleButton from "@/app/components/FavoriteToggleButton";
 import { getDish, getDishes } from "@/lib/menu";
 import { dishSummary, dishJsonLd, jsonLdString } from "@/lib/seo";
+import { SITE_URL, SITE_NAME } from "@/lib/site";
 
 // Static via params: every dish id is known at build time.
 export function generateStaticParams() {
@@ -12,26 +13,43 @@ export function generateStaticParams() {
 }
 
 // Title, description and the social preview come from the dish record.
-// The title template in the root layout turns "Doro Wat" into
-// "Doro Wat | Addis Eats". The og:image is the opengraph-image.jsx file that
-// sits next to this page — Next wires it up on its own.
+// Provides absolute URL images so crawlers (Telegram, WhatsApp, Twitter)
+// show the actual dish photo when sharing the link.
 export async function generateMetadata({ params }) {
   const { id } = await params;
   const dish = getDish(id);
   if (!dish) return { title: "Dish not found", robots: { index: false } };
 
   const description = dishSummary(dish);
+  const base = SITE_URL.replace(/\/+$/, "");
+  const imagePath = dish.image.startsWith("/") ? dish.image : `/${dish.image}`;
+  const absoluteImageUrl = `${base}${imagePath}`;
+
   return {
     title: dish.name,
     description,
     alternates: { canonical: `/menu/${dish.id}` },
     openGraph: {
       type: "website",
-      title: dish.name,
+      title: `${dish.name} — ${dish.price} ETB | ${SITE_NAME}`,
       description,
       url: `/menu/${dish.id}`,
+      siteName: SITE_NAME,
+      images: [
+        {
+          url: absoluteImageUrl,
+          width: 800,
+          height: 600,
+          alt: dish.name,
+        },
+      ],
     },
-    twitter: { card: "summary_large_image", title: dish.name, description },
+    twitter: {
+      card: "summary_large_image",
+      title: `${dish.name} — ${dish.price} ETB | ${SITE_NAME}`,
+      description,
+      images: [absoluteImageUrl],
+    },
   };
 }
 

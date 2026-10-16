@@ -27,15 +27,15 @@ and a broken hero image, so it is **not a clean "before"**. Run B is a productio
 build in Incognito, with two Lighthouse warnings (first-visit image optimization
 made the page load slowly; IndexedDB data present).
 
-| Metric | Run A (Day 41 code, build mode unknown) | Run B (final project, `build` + `start`) | 
+| Metric | Run A (Day 41 code, build mode unknown) | Run B (Day 43, `build` + `start`) | Day 44 fixes (re-measure) |
 |---|---|---|---|
-| Performance | 70 | 76 | 86 |
-| FCP | 0.8 s | 0.8 s | 1.7|
-| LCP | 3.1 s (hero image was broken) | 1.7 s (real hero photo)
-| TBT (lab stand-in for INP) | 2,580 ms | 980 ms|
+| Performance | 70 | 76 | TODO |
+| FCP | 0.8 s | 0.8 s | TODO |
+| LCP | 1.3 s (hero image was broken, so this was text) | 3.1 s (real hero photo) | TODO |
+| TBT (lab stand-in for INP) | 2,580 ms | 720 ms | TODO |
 | CLS | 0 | 0 | TODO |
 | Speed Index | 3.5 s | 1.9 s | TODO |
-| Accessibility / Best Practices / SEO | 95 / 96 / 100 | 100/ 100 / 100 |
+| Accessibility / Best Practices / SEO | 95 / 96 / 100 | 95 / 96 / 100 | TODO |
 
 To get a proper before/after, run the same procedure on the Day_42 zip. Warm the
 image cache first (load every page once), then take the median of 3 runs.
@@ -55,8 +55,21 @@ return 200; `/api/menu` returns the 6 dishes; the hero is served as a 17 KB AVIF
 Not verified: Lighthouse itself (no browser in my environment), so every number
 in the "Day 44 fixes" column above is still TODO.
 
+## What changed, and why it should move each number
 
+| # | Change | Files | Targets |
+|---|---|---|---|
+| 1 | **Every `<img>` → `next/image`** with real `width`/`height` and an honest `sizes`. Browser reserves the box before the file arrives, and downloads a right-sized AVIF/WebP instead of the full original. | `Hero.jsx`, `DishCard.jsx`, `menu/[id]/page.js`, `CartView.jsx`, `SearchBox.jsx`, `next.config.mjs` (`remotePatterns`) | CLS, LCP, bytes |
+| 2 | **`preload` on the hero image only** (the one largest above-the-fold image). `priority` was deprecated in Next 16 in favour of `preload`; it does the same job (`<link rel="preload" as="image">` in `<head>`, eager load). Nothing else is preloaded. | `Hero.jsx` | LCP |
+| 3 | **Hero served from the build, not `./heroimage.svg`.** The old path pointed at a file that isn't in `public/`, and the original SVG was a 90 KB wrapper around a base64 JPEG. Now `app/assets/hero.jpg` (same photo, 448×560) is statically imported, so Next knows its real size and generates a blur placeholder. | `Hero.jsx`, `app/assets/hero.jpg` | LCP, CLS |
+| 4 | **Google Fonts `@import` → `next/font/local`.** Removes the render-blocking CSS request to `fonts.googleapis.com` and the second connection to `fonts.gstatic.com`. Fonts are served from our origin, preloaded, `font-display: swap`, with a **size-adjusted fallback** so the swap doesn't shift layout. | `layout.js`, `globals.css`, `app/fonts/*` | LCP, CLS |
+| 5 | **Third-party script → `next/script` with `lazyOnload`.** The app had no third-party script, so I added the one a real site needs (GA4) as an opt-in component that renders nothing unless `NEXT_PUBLIC_GA_ID` is set. It loads after the page is idle. | `Analytics.jsx`, `layout.js` | INP/TBT, LCP |
+| 6 | **`.env.example` committed, real env files ignored.** `.gitignore` had `.env*`, which also ignored the example; added `!.env.example`. | `.env.example`, `.gitignore` | hygiene |
 
+### Bug fixed on the way
+`FeaturedDishes` passed `id`, `name`, … as separate props, but `DishCard`
+reads a single `dish` prop (changed in Day 41/42). Home would have crashed on
+`dish` being `undefined` once the menu loaded. It now passes `dish={dish}`.
 
 ## Verified here (no browser available in my sandbox)
 

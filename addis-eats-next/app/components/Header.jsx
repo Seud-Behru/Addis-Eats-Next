@@ -225,7 +225,7 @@ export default function Header() {
             })}
           </div>
 
-          <div className="mt-4 flex *:w-full">{authControl(closeMenu)}</div>
+          <div className="mt-4 flex [&>*]:w-full">{authControl(closeMenu)}</div>
         </nav>
       )}
     </header>

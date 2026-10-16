@@ -1,17 +1,91 @@
 import { getDish } from "./menu";
 import { validateDelivery } from "./validate";
 
-// No database yet: orders live in memory and reset when the server restarts.
-const store = (globalThis.__addisOrders ??= []);
+// Baseline seed orders so the restaurant dashboard has realistic operational metrics on start
+const INITIAL_ORDERS = [
+  {
+    id: "ord_addis_89a1",
+    userId: "usr_bereket",
+    createdAt: new Date(Date.now() - 1000 * 60 * 14).toISOString(), // 14 mins ago
+    status: "Preparing",
+    manualStatus: true,
+    items: [
+      { id: "prime-derek-tibs", name: "Prime Derek Tibs", price: 680, quantity: 2 },
+      { id: "cold-brew", name: "Cold Brew", price: 180, quantity: 2 },
+    ],
+    total: 1720,
+    customer: {
+      name: "Bereket Tesfaye",
+      phone: "+251 91 123 4567",
+      address: "Bole Medhanialem, House 402",
+      city: "Bole",
+      notes: "Please pack extra awaze and mitmita.",
+    },
+  },
+  {
+    id: "ord_addis_72b3",
+    userId: "usr_selam",
+    createdAt: new Date(Date.now() - 1000 * 60 * 32).toISOString(), // 32 mins ago
+    status: "Out for delivery",
+    manualStatus: true,
+    items: [
+      { id: "doro-wat", name: "Authentic Doro Wat", price: 850, quantity: 1 },
+      { id: "addis-dialova-pizza", name: "Addis Diavola Pizza", price: 520, quantity: 1 },
+    ],
+    total: 1370,
+    customer: {
+      name: "Selamawit Desta",
+      phone: "+251 92 884 9211",
+      address: "Kazanchis, UN ECA Gate 3",
+      city: "Kazanchis",
+      notes: "Call when rider arrives at security gate.",
+    },
+  },
+  {
+    id: "ord_addis_54c9",
+    userId: "usr_dawit",
+    createdAt: new Date(Date.now() - 1000 * 60 * 75).toISOString(), // 75 mins ago
+    status: "Delivered",
+    manualStatus: true,
+    items: [
+      { id: "braised-lamb-asta", name: "Braised Lamb Pasta", price: 740, quantity: 2 },
+    ],
+    total: 1480,
+    customer: {
+      name: "Dawit Haile",
+      phone: "+251 91 445 6789",
+      address: "CMC Michael, Block 12",
+      city: "CMC",
+      notes: "Delivered to reception.",
+    },
+  },
+  {
+    id: "ord_addis_31d4",
+    userId: "usr_almaz",
+    createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(), // 2 hrs ago
+    status: "Delivered",
+    manualStatus: true,
+    items: [
+      { id: "lassic-heeseburger", name: "Classic Cheeseburger", price: 460, quantity: 2 },
+      { id: "cold-brew", name: "Cold Brew", price: 180, quantity: 1 },
+    ],
+    total: 1100,
+    customer: {
+      name: "Almaz Kebede",
+      phone: "+251 93 551 2345",
+      address: "Old Airport, Near Golf Club",
+      city: "Old Airport",
+      notes: "Leave with security.",
+    },
+  },
+];
 
+// In-memory store initialized with baseline operational data
+const store = (globalThis.__addisOrders ??= [...INITIAL_ORDERS]);
 
 export function submitOrder(input) {
   const fieldErrors = validateDelivery(input);
 
-  // Ownership starts here: userId comes only from the caller's own
-  // getSession() lookup (see app/actions.js and app/api/orders/route.js),
-  // never from client-submitted form or JSON data, so an order can't be
-  // created under someone else's account by sending a different id.
   if (!input?.userId) {
     fieldErrors.session = "You must be signed in to place an order.";
   }
@@ -46,7 +120,7 @@ export function submitOrder(input) {
       notes: String(input.notes ?? "").trim(),
     },
   };
-  store.push(order);
+  store.unshift(order);
   return { ok: true, order };
 }
 
@@ -137,17 +211,41 @@ export function getOrdersSummary() {
     Cancelled: 0,
   };
 
+  const zoneMap = {};
+  const dishMap = {};
+
   all.forEach((o) => {
     if (statusCounts[o.status] !== undefined) {
       statusCounts[o.status]++;
     }
+    const zone = o.customer?.city || "Bole";
+    zoneMap[zone] = (zoneMap[zone] || 0) + 1;
+
+    if (Array.isArray(o.items)) {
+      o.items.forEach((item) => {
+        dishMap[item.name] = (dishMap[item.name] || 0) + (item.quantity || 1);
+      });
+    }
   });
+
+  const topDishes = Object.entries(dishMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 4);
+
+  const topZones = Object.entries(zoneMap)
+    .map(([zone, count]) => ({ zone, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 4);
 
   return {
     totalRevenue,
     totalOrders: all.length,
     activeOrders: statusCounts.Preparing + statusCounts["Out for delivery"],
     statusCounts,
-    recentOrders: all.slice(0, 5),
+    averageOrderValue: validOrders.length > 0 ? Math.round(totalRevenue / validOrders.length) : 0,
+    topDishes,
+    topZones,
+    recentOrders: all.slice(0, 6),
   };
 }

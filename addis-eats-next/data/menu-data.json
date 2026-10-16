@@ -41,7 +41,7 @@
     "rating": 4.9,
     "reviews": 120,
     "badge": "Chef's Table",
-    "image": "/images/braised-lamp.avif"
+    "image": "/images/braised-lamp.jpg"
   },
   {
     "id": "lassic-heeseburger",
@@ -52,7 +52,7 @@
     "rating": 4.7,
     "reviews": 88,
     "badge": "Popular",
-    "image": "/images/burger.avif"
+    "image": "/images/burger.jpg"
   },
   {
     "id": "cold-brew",

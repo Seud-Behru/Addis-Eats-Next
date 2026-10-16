@@ -5,7 +5,9 @@ import fetcher from "@/lib/fetcher";
 
 const STAGES = ["Preparing", "Out for delivery", "Delivered"];
 
-
+// fallbackData is the order the server already rendered, so `order` is
+// never undefined — there's real data on screen before this component
+// has made a single request of its own.
 export default function OrderStatus({ id, initialOrder }) {
   const { data: order } = useSWR(`/api/orders/${id}`, fetcher, {
     fallbackData: initialOrder,

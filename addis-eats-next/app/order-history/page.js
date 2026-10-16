@@ -43,7 +43,7 @@ export default async function OrderHistoryPage() {
           <ExportOrdersButton orders={orders} />
           <Link
             href="/menu"
-            className="inline-flex min-h-11 items-center rounded-full bg-cta px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-cta-dark"
+            className="inline-flex min-h-[44px] items-center rounded-full bg-cta px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-cta-dark"
           >
             Order Food
           </Link>
@@ -61,7 +61,7 @@ export default async function OrderHistoryPage() {
           <div className="mt-8">
             <Link
               href="/menu"
-              className="inline-flex min-h-11 items-center rounded-full bg-forest px-6 py-3 text-sm font-semibold text-white transition hover:bg-deep-forest"
+              className="inline-flex min-h-[44px] items-center rounded-full bg-forest px-6 py-3 text-sm font-semibold text-white transition hover:bg-deep-forest"
             >
               Browse Addis Eats Menu
             </Link>
@@ -89,12 +89,13 @@ export default async function OrderHistoryPage() {
                         {order.id}
                       </Link>
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${isCancelled
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                          isCancelled
                             ? "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300"
                             : isDelivered
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                              : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                          }`}
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                        }`}
                       >
                         {order.status}
                       </span>
@@ -132,7 +133,7 @@ export default async function OrderHistoryPage() {
                     {canCancel && <CancelOrderButton orderId={order.id} />}
                     <Link
                       href={`/orders/${order.id}`}
-                      className="inline-flex min-h-11 items-center rounded-full bg-surface px-4 py-2 text-xs font-semibold text-heading transition hover:bg-border"
+                      className="inline-flex min-h-[44px] items-center rounded-full bg-surface px-4 py-2 text-xs font-semibold text-heading transition hover:bg-border"
                     >
                       Track Order →
                     </Link>
